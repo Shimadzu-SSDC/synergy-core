@@ -25,6 +25,7 @@
 #import <UserNotifications/UNNotificationContent.h>
 #import <UserNotifications/UNNotificationTrigger.h>
 #import "OSXNotificationDelegate.h"
+#include <iostream>
 
 #import <QtGlobal>
 
@@ -58,6 +59,7 @@ isOSXDevelopmentBuild()
 bool
 showOSXNotification(const QString& title, const QString& body)
 {
+    std::cout<<"SGADTRACE: Start showOSXNotification"<<std::endl;
 #if OSX_DEPLOYMENT_TARGET >= 1014
 	// accessing notification center on unsigned build causes an immidiate
 	// application shutodown (in this case synergys) and cannot be caught
@@ -71,7 +73,7 @@ showOSXNotification(const QString& title, const QString& body)
 	requestOSXNotificationPermission();
 
 	UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
-    center.delegate = [[OSXNotificationDelegate alloc] init];
+    UNUserNotificationCenter.currentNotificationCenter.delegate = [OSXNotificationDelegate alloc];
 
 	UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
 	content.title = title.toNSString();
