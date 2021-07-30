@@ -60,7 +60,6 @@ bool
 showOSXNotification(const QString& title, const QString& body)
 {
     std::cout<<"SGADTRACE: Start showOSXNotification"<<std::endl;
-#if OSX_DEPLOYMENT_TARGET >= 1014
 	// accessing notification center on unsigned build causes an immidiate
 	// application shutodown (in this case synergys) and cannot be caught
 	// to avoid issues with it need to first check if this is a dev build
@@ -88,14 +87,7 @@ showOSXNotification(const QString& title, const QString& body)
 		   qWarning("Notification display request error: %s", [[NSString stringWithFormat:@"%@", error] UTF8String]);
 	   }
 	}];
-#else
-	NSUserNotification* notification = [[NSUserNotification alloc] init];
-	notification.title = title.toNSString();
-	notification.informativeText = body.toNSString();
-	notification.soundName = NSUserNotificationDefaultSoundName;   //Will play a default sound
-	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification: notification];
-	[notification autorelease];
-#endif
+
 	return true;
 }
 
