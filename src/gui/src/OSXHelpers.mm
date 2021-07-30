@@ -24,6 +24,7 @@
 #import <UserNotifications/UNUserNotificationCenter.h>
 #import <UserNotifications/UNNotificationContent.h>
 #import <UserNotifications/UNNotificationTrigger.h>
+#import "OSXNotificationDelegate.h"
 
 #import <QtGlobal>
 
@@ -70,6 +71,7 @@ showOSXNotification(const QString& title, const QString& body)
 	requestOSXNotificationPermission();
 
 	UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
+    center.delegate = [[OSXNotificationDelegate alloc] init];
 
 	UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
 	content.title = title.toNSString();
