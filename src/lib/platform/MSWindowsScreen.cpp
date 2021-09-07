@@ -328,13 +328,6 @@ MSWindowsScreen::enter()
 bool
 MSWindowsScreen::leave()
 {
-    POINT pos;
-    if (!getThisCursorPos(&pos))
-    {
-        LOG((CLOG_DEBUG "Unable to leave screen as Windows security has disabled critical functions required to let synergy work"));
-        //unable to get position this means synergy will break if the cursor leaves the screen
-        return false;
-    }
     // get keyboard layout of foreground window.  we'll use this
     // keyboard layout for translating keys sent to clients.
     HWND window  = GetForegroundWindow();
@@ -1588,25 +1581,24 @@ MSWindowsScreen::warpCursorNoFlush(SInt32 x, SInt32 y)
 
     // check to see if the mouse pos was set correctly
     POINT cursorPos;
+    ZeroMemory(&cursorPos, sizeof(cursorPos));
     getThisCursorPos(&cursorPos);
    
     // there is a bug or round error in SetCursorPos and GetCursorPos on 
     // a high DPI setting. The check here is for Vista/7 login screen. 
     // since this feature is mainly for client, so only check on client.
-    if (!isPrimary()) {
-        if ((cursorPos.x != x) && (cursorPos.y != y)) {
-            LOG((CLOG_DEBUG "SetCursorPos did not work; using fakeMouseMove instead"));
-            LOG((CLOG_DEBUG "cursor pos %d, %d expected pos %d, %d", cursorPos.x, cursorPos.y, x, y));
-            // when at Vista/7 login screen, SetCursorPos does not work (which could be
-            // an MS security feature). instead we can use fakeMouseMove, which calls
-            // mouse_event.
-            // IMPORTANT: as of implementing this function, it has an annoying side 
-            // effect; instead of the mouse returning to the correct exit point, it
-            // returns to the center of the screen. this could have something to do with
-            // the center screen warping technique used (see comments for onMouseMove
-            // definition).
-            fakeMouseMove(x, y);
-        }
+    if ((cursorPos.x != x) && (cursorPos.y != y)) {
+        LOG((CLOG_DEBUG "SetCursorPos did not work; using fakeMouseMove instead"));
+        LOG((CLOG_DEBUG "cursor pos %d, %d expected pos %d, %d", cursorPos.x, cursorPos.y, x, y));
+        // when at Vista/7 login screen, SetCursorPos does not work (which could be
+        // an MS security feature). instead we can use fakeMouseMove, which calls
+        // mouse_event.
+        // IMPORTANT: as of implementing this function, it has an annoying side 
+        // effect; instead of the mouse returning to the correct exit point, it
+        // returns to the center of the screen. this could have something to do with
+        // the center screen warping technique used (see comments for onMouseMove
+        // definition).
+        fakeMouseMove(x, y);
     }
 
     // yield the CPU.  there's a race condition when warping:

@@ -479,15 +479,42 @@ MSWindowsDesks::secondaryDeskProc(
 void
 MSWindowsDesks::deskMouseMove(SInt32 x, SInt32 y) const
 {
-    // when using absolute positioning with mouse_event(),
-    // the normalized device coordinates range over only
-    // the primary screen.
-    SInt32 w = GetSystemMetrics(SM_CXSCREEN);
-    SInt32 h = GetSystemMetrics(SM_CYSCREEN);
-    send_mouse_input(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE,
-                            (DWORD)((65535.0f * x) / (w - 1) + 0.5f),
-                            (DWORD)((65535.0f * y) / (h - 1) + 0.5f),
-                            0);
+    if (m_isPrimary) {
+        // On the primary, there is no need to fake the movement of the
+        // mouse cursor, just call SetCursorPos. Otherwise we are unable
+        // to move the cursor from the center of the screen when entering
+        // the server on the login screen (see comment tagged as IMPORTANT
+        // in function MSWindowsScreen::warpCursorNoFlush)
+        SetCursorPos(x, y);
+
+        POINT pos;
+        // This call server two purposes:
+        //   - Make sure that the previous call to SetCursorPos is completed
+        //     within this call to deskMouseMove.
+        //   - Call SendInput() if previous call to SetCursorPos was not
+        //     successful.
+        GetCursorPos(&pos);
+
+        if ((pos.x != x) || (pos.y != y)) {
+            SInt32 w = GetSystemMetrics(SM_CXSCREEN);
+            SInt32 h = GetSystemMetrics(SM_CYSCREEN);
+            send_mouse_input(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE,
+                (DWORD)((65535.0f * x) / (w - 1) + 0.5f),
+                (DWORD)((65535.0f * y) / (h - 1) + 0.5f),
+                0);
+        }
+    }
+    else {
+        // when using absolute positioning with mouse_event(),
+        // the normalized device coordinates range over only
+        // the primary screen.
+        SInt32 w = GetSystemMetrics(SM_CXSCREEN);
+        SInt32 h = GetSystemMetrics(SM_CYSCREEN);
+        send_mouse_input(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE,
+            (DWORD)((65535.0f * x) / (w - 1) + 0.5f),
+            (DWORD)((65535.0f * y) / (h - 1) + 0.5f),
+            0);
+    }
 }
 
 void
