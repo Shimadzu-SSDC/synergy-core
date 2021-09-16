@@ -586,15 +586,6 @@ void
 MSWindowsDesks::deskLeave(Desk* desk, HKL keyLayout)
 {
     ShowCursor(FALSE);
-
-    // Get the current mouse cursor position
-    POINT point;
-    if (GetCursorPos(&point)) {
-        // Reset the "center" position to the current mouse position
-        m_xCenter = point.x;
-        m_yCenter = point.y;
-    }
-
     if (m_isPrimary) {
         // map a window to hide the cursor and to use whatever keyboard
         // layout we choose rather than the keyboard layout of the last
@@ -658,7 +649,7 @@ MSWindowsDesks::deskLeave(Desk* desk, HKL keyLayout)
     else {
         // move hider window under the cursor center, raise, and show it
         SetWindowPos(desk->m_window, HWND_TOP,
-            point.x, point.y, 1, 1,
+            m_xCenter, m_yCenter, 1, 1,
             SWP_NOACTIVATE | SWP_SHOWWINDOW);
 
         // watch for mouse motion.  if we see any then we hide the
