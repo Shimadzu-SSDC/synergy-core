@@ -337,14 +337,6 @@ MSWindowsScreen::leave()
     // tell the key mapper about the keyboard layout
     m_keyState->setKeyLayout(m_keyLayout);
 
-    // Get the current mouse cursor position
-    POINT point;
-    if (GetCursorPos(&point)) {
-        // Reset the "center" position to the current mouse position
-        m_xCenter = point.x;
-        m_yCenter = point.y;
-    }
-
     // tell desk that we're leaving and tell it the keyboard layout
     m_desks->leave(m_keyLayout);
 
@@ -1448,9 +1440,24 @@ MSWindowsScreen::onMouseMove(SInt32 mx, SInt32 my)
         // secondary screen.
         LOG((CLOG_DEBUG5 "warping server cursor to center: %+d,%+d", m_xCenter, m_yCenter));
         warpCursorNoFlush(m_xCenter, m_yCenter);
-        
-        // send motion
-        sendEvent(m_events->forIPrimaryScreen().motionOnSecondary(), MotionInfo::alloc(x, y));
+
+        // examine the motion.  if it's about the distance
+        // from the center of the screen to an edge then
+        // it's probably a bogus motion that we want to
+        // ignore (see warpCursorNoFlush() for a further
+        // description).
+        static SInt32 bogusZoneSize = 0;
+        if (-x + bogusZoneSize > m_xCenter - m_x ||
+            x + bogusZoneSize > m_x + m_w - m_xCenter ||
+            -y + bogusZoneSize > m_yCenter - m_y ||
+            y + bogusZoneSize > m_y + m_h - m_yCenter) {
+
+            LOG((CLOG_DEBUG "dropped bogus delta motion: %+d,%+d", x, y));
+        }
+        else {
+            // send motion
+            sendEvent(m_events->forIPrimaryScreen().motionOnSecondary(), MotionInfo::alloc(x, y));
+        }
     }
 
     return true;
