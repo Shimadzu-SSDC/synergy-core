@@ -187,7 +187,7 @@ private: // HACK
     bool                onKey(WPARAM, LPARAM);
     bool                onHotKey(WPARAM, LPARAM);
     bool                onMouseButton(WPARAM, LPARAM);
-    bool                onMouseMove(SInt32 x, SInt32 y);
+    bool                onMouseMove(SInt32 x, SInt32 y, bool relative=false);
     bool                onMouseWheel(SInt32 xDelta, SInt32 yDelta);
     bool                onScreensaver(bool activated);
     bool                onDisplayChange();

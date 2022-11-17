@@ -1066,6 +1066,11 @@ MSWindowsScreen::onPreDispatchPrimary(HWND,
         return onMouseMove(static_cast<SInt32>(wParam),
                             static_cast<SInt32>(lParam));
 
+    case SYNERGY_MSG_MOUSE_MOVE_DELTA:
+        return onMouseMove(static_cast<SInt32>(wParam),
+            static_cast<SInt32>(lParam),
+            true);
+
     case SYNERGY_MSG_MOUSE_WHEEL:
         // XXX -- support x-axis scrolling
         return onMouseWheel(0, static_cast<SInt32>(wParam));
@@ -1401,12 +1406,26 @@ MSWindowsScreen::onMouseButton(WPARAM wParam, LPARAM lParam)
 //      - this actually records the current x,y as "last" a second time (it seems)
 //   5. sends the delta movement to the client (could be +1,+1 or -1,+4 for example)
 bool
-MSWindowsScreen::onMouseMove(SInt32 mx, SInt32 my)
+MSWindowsScreen::onMouseMove(SInt32 mx, SInt32 my, bool relative)
 {
-    // compute motion delta (relative to the last known
-    // mouse position)
-    SInt32 x = mx - m_xCursor;
-    SInt32 y = my - m_yCursor;
+    SInt32 x = 0;
+    SInt32 y = 0;
+
+    if (relative)
+    {
+        // Input is already relative, update absolute values from delta
+        x = mx;
+        y = my;
+        mx = m_xCursor + x;
+        my = m_yCursor + y;
+    }
+    else
+    {
+        // compute motion delta (relative to the last known
+        // mouse position)
+        x = mx - m_xCursor;
+        y = my - m_yCursor;
+    }
 
     LOG((CLOG_DEBUG3
         "mouse move - motion delta: %+d=(%+d - %+d),%+d=(%+d - %+d)",

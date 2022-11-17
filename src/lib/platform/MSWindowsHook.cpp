@@ -20,6 +20,7 @@
 #include "synergy/protocol_types.h"
 #include "synergy/XScreen.h"
 #include "base/Log.h"
+#include "NamedPipeServer.h"
 
 static const char* g_name = "synwinhk";
 
@@ -44,6 +45,48 @@ static BYTE                g_keyState[256]   = { 0 };
 static DWORD            g_hookThread      = 0;
 static bool                g_fakeServerInput       = false;
 static BOOL				g_isPrimary = TRUE;
+
+class NamePipeServer : public SNP::NPServer<>
+{
+
+public:
+
+    inline NamePipeServer() : SNP::NPServer<>("SynergyNPAPI")
+    { }
+
+protected:
+
+    inline virtual void GetAnswerToRequest(const uint8_t* requestBuffer, DWORD requestSize, DWORD maxResponseSize, uint8_t* responseBuffer, DWORD& responseSize)
+    {
+        if (requestSize == 12 && *(reinterpret_cast<const uint32_t*>(requestBuffer)) == 0x78120023)
+        {
+            const SInt32 deltaX = *reinterpret_cast<const SInt32*>(requestBuffer + 4);
+            const SInt32 deltaY = *reinterpret_cast<const SInt32*>(requestBuffer + 8);
+            LOG((CLOG_DEBUG2 "Received mouse move request from named pipe server: %d/%d.", deltaX, deltaY));
+            PostThreadMessage(g_threadID, SYNERGY_MSG_MOUSE_MOVE_DELTA, deltaX, deltaY);
+
+            responseBuffer[0] = 'O';
+            responseBuffer[1] = 'K';
+            responseSize = 2;
+        }
+        else
+        {
+            LOG((CLOG_DEBUG2 "Received bad request from named pipe server"));
+            responseBuffer[0] = 'B';
+            responseBuffer[1] = 'A';
+            responseBuffer[2] = 'D';
+            responseSize = 3;
+        }
+    }
+
+    inline virtual void OnServerFatalError(const char* what)
+    {
+        LOG((CLOG_ERR "Named pipe server initialization failed: %s.", what));
+    }
+};
+static NamePipeServer g_NPS;
+
+
 
 MSWindowsHook::MSWindowsHook()
 {
@@ -678,6 +721,8 @@ MSWindowsHook::install()
     }
 #endif
 
+    g_NPS.StartServer();
+
     // check that we got all the hooks we wanted
     if ((g_mouseLL    == NULL) ||
 #if !NO_GRAB_KEYBOARD
@@ -702,6 +747,7 @@ MSWindowsHook::uninstall()
     // discard old dead keys
     g_deadVirtKey = 0;
     g_deadLParam  = 0;
+    g_NPS.StopServer();
 
     // uninstall hooks
     if (g_keyboardLL != NULL) {
