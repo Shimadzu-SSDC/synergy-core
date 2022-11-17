@@ -49,4 +49,5 @@ public:
     static int installScreenSaver();
 
     static int uninstallScreenSaver();
+
 };
