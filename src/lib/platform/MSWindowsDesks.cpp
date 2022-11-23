@@ -142,7 +142,7 @@ MSWindowsDesks::MSWindowsDesks(
     m_events(events),
     m_stopOnDeskSwitch(stopOnDeskSwitch)
 {
-
+    m_sm.SetHostActive(m_isOnScreen);
     m_cursor    = createBlankCursor();
     m_deskClass = createDeskWindowClass(m_isPrimary);
     m_keyLayout = GetKeyboardLayout(GetCurrentThreadId());
@@ -191,6 +191,7 @@ MSWindowsDesks::disable()
     removeDesks();
 
     m_isOnScreen = m_isPrimary;
+    m_sm.SetHostActive(m_isOnScreen);
 }
 
 void
@@ -732,11 +733,13 @@ MSWindowsDesks::deskThread(void* vdesk)
 
         case SYNERGY_MSG_ENTER:
             m_isOnScreen = true;
+            m_sm.SetHostActive(m_isOnScreen);
             deskEnter(desk);
             break;
 
         case SYNERGY_MSG_LEAVE:
             m_isOnScreen = false;
+            m_sm.SetHostActive(m_isOnScreen);
             m_keyLayout  = (HKL)msg.wParam;
             deskLeave(desk, m_keyLayout);
             break;

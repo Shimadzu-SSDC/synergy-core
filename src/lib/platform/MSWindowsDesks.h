@@ -30,6 +30,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include "SynergySharedMemory.h"
+
 class Event;
 class EventQueueTimer;
 class Thread;
@@ -293,4 +295,6 @@ private:
 
     // true if program should stop on desk switch.
     bool                m_stopOnDeskSwitch;
+
+    SNP::SynergySharedMemory m_sm;
 };
