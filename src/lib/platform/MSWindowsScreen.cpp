@@ -133,6 +133,27 @@ MSWindowsScreen::MSWindowsScreen(
 
     s_screen = this;
     try {
+
+        // By default, always turn on mouse key even if a mouse is attached.
+        if (!m_isPrimary)
+        {
+            MOUSEKEYS mKey;
+            memset(&mKey, 0, sizeof(mKey));
+            mKey.cbSize = sizeof(mKey);
+            if (SystemParametersInfo(SPI_GETMOUSEKEYS, mKey.cbSize, &mKey, 0))
+            {
+                DWORD oldFlags = mKey.dwFlags;
+
+                // Turn on MouseKeys if not already turned on.
+                mKey.dwFlags |= (MKF_AVAILABLE | MKF_MOUSEKEYSON);
+
+                // update MouseKeys
+                if (oldFlags != mKey.dwFlags) {
+                    SystemParametersInfo(SPI_SETMOUSEKEYS, mKey.cbSize, &mKey, SPIF_SENDCHANGE);
+                }
+            }
+        }
+
         if (m_isPrimary && !m_noHooks) {
             m_hook.loadLibrary();
         }
@@ -292,6 +313,9 @@ MSWindowsScreen::disable()
 void
 MSWindowsScreen::enter()
 {
+    // ASAP
+    ShowCursor(TRUE);
+
     m_desks->enter();
     if (m_isPrimary) {
         // enable special key sequences on win95 family
@@ -325,6 +349,9 @@ MSWindowsScreen::enter()
 bool
 MSWindowsScreen::leave()
 {
+    // ASAP
+    ShowCursor(FALSE);
+
     // get keyboard layout of foreground window.  we'll use this
     // keyboard layout for translating keys sent to clients.
     m_keyLayout = AppUtilWindows::instance().getCurrentKeyboardLayout();
@@ -1873,7 +1900,7 @@ MSWindowsScreen::updateForceShowCursor()
     DWORD oldFlags = m_mouseKeys.dwFlags;
 
     // turn on MouseKeys
-    m_mouseKeys.dwFlags = MKF_AVAILABLE | MKF_MOUSEKEYSON;
+    m_mouseKeys.dwFlags |= (MKF_AVAILABLE | MKF_MOUSEKEYSON);
 
     // make sure MouseKeys is active in whatever state the NumLock is
     // not currently in.
